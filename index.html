@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Clubhouse — Score Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%231B4332%22/><line x1=%2235%22 y1=%2222%22 x2=%2235%22 y2=%2280%22 stroke=%22%23F7F3E8%22 stroke-width=%225%22 stroke-linecap=%22round%22/><path d=%22M35 24 L68 34 L35 44 Z%22 fill=%22%23C9A227%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-deep:#16362A;
+    --green:#1F4D3A;
+    --fairway:#2D6A4F;
+    --cream:#F6F1E4;
+    --cream-2:#EFE7D2;
+    --gold:#C9A227;
+    --gold-soft:#E4C766;
+    --ink:#1B2320;
+    --ink-soft:#5B6560;
+    --line:#D8CDAE;
+    --red:#9C3B2E;
+    --shadow: 0 8px 24px rgba(22,54,42,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--green-deep);}
+  body{
+    font-family:'DM Sans', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:90px;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    letter-spacing:.2px;
+  }
+  ::selection{ background:var(--gold-soft); }
+
+  /* ---------- Header ---------- */
+  header.top{
+    background: linear-gradient(160deg, var(--green-deep), var(--green) 60%, var(--fairway));
+    color:var(--cream);
+    padding:22px 18px 26px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.top::after{
+    content:"";
+    position:absolute; right:-40px; top:-40px; width:180px; height:180px;
+    background: radial-gradient(circle, rgba(201,162,39,.25), transparent 70%);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; position:relative; z-index:1;}
+  .brand svg{ width:38px; height:38px; flex-shrink:0; }
+  .brand-text h1{ font-size:22px; margin:0; font-weight:600; line-height:1.1;}
+  .brand-text p{ margin:2px 0 0; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold-soft); opacity:.9;}
+
+  /* ---------- Tab nav ---------- */
+  nav.tabs{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--green-deep);
+    border-top:1px solid rgba(201,162,39,.25);
+    display:flex;
+    z-index:50;
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  nav.tabs button{
+    flex:1; background:none; border:none; color:#9FB2A8;
+    font-family:'DM Sans',sans-serif; font-size:10.5px; font-weight:500;
+    padding:8px 2px 6px; display:flex; flex-direction:column; align-items:center; gap:4px;
+    letter-spacing:.3px; cursor:pointer; border-radius:10px;
+  }
+  nav.tabs button svg{ width:20px; height:20px; opacity:.75; }
+  nav.tabs button.active{ color:var(--gold-soft); }
+  nav.tabs button.active svg{ opacity:1; }
+  nav.tabs button.active{ background:rgba(201,162,39,.10); }
+
+  main{ max-width:640px; margin:0 auto; padding:16px 14px 20px; }
+  section.screen{ display:none; animation:fade .25s ease; }
+  section.screen.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+  .card{
+    background:var(--cream);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:16px;
+    margin-bottom:14px;
+    border:1px solid var(--line);
+  }
+  .card h2{ margin:0 0 4px; font-size:18px; color:var(--green-deep); }
+  .card .sub{ margin:0 0 14px; font-size:12.5px; color:var(--ink-soft); }
+  .eyebrow{
+    text-transform:uppercase; font-size:10.5px; letter-spacing:1.5px;
+    color:var(--fairway); font-weight:700; margin:0 0 4px;
+  }
+
+  label{ display:block; font-size:12.5px; font-weight:500; color:var(--ink-soft); margin:10px 0 5px;}
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:#fff; font-size:15px; font-family:'DM Sans',sans-serif; color:var(--ink);
+  }
+  input:focus, select:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--green); color:var(--cream); border:none; padding:11px 18px;
+    border-radius:10px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer; letter-spacing:.2px;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn.gold{ background:var(--gold); color:var(--green-deep); }
+  .btn.outline{ background:transparent; color:var(--green); border:1.5px solid var(--green); }
+  .btn.danger{ background:transparent; color:var(--red); border:1.5px solid var(--red); padding:7px 12px; font-size:12.5px;}
+  .btn.small{ padding:7px 12px; font-size:12.5px; }
+  .btn.block{ width:100%; }
+  .row{ display:flex; gap:8px; align-items:center; }
+  .row.wrap{ flex-wrap:wrap; }
+  .spacer{ flex:1; }
+
+  .empty{
+    text-align:center; padding:26px 10px; color:var(--ink-soft);
+  }
+  .empty svg{ width:44px; height:44px; opacity:.35; margin-bottom:8px; }
+  .empty p{ margin:2px 0; font-size:13.5px; }
+
+  /* list items */
+  .item{
+    display:flex; align-items:center; gap:10px; padding:10px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .item:last-child{ border-bottom:none; }
+  .item .avatar{
+    width:36px; height:36px; border-radius:50%; background:var(--fairway); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;
+    flex-shrink:0; font-family:'Fraunces',serif;
+  }
+  .item .meta{ flex:1; min-width:0; }
+  .item .meta .name{ font-weight:700; font-size:14.5px; }
+  .item .meta .sub2{ font-size:11.5px; color:var(--ink-soft); }
+
+  /* hole rows builder for course creation */
+  .hole-row{
+    display:grid; grid-template-columns:32px 1fr 1fr auto; gap:8px; align-items:center;
+    padding:6px 0;
+  }
+  .hole-row .hnum{ font-family:'DM Mono',monospace; font-size:13px; color:var(--ink-soft); text-align:center;}
+
+  /* Scorecard table */
+  .sc-wrap{ overflow-x:auto; border-radius:12px; border:1px solid var(--line); }
+  table.scorecard{ border-collapse:collapse; width:100%; min-width:420px; background:#fff; }
+  table.scorecard th, table.scorecard td{
+    border-bottom:1px solid var(--line); border-right:1px solid var(--line);
+    padding:7px 4px; text-align:center; font-size:12.5px;
+  }
+  table.scorecard th:first-child, table.scorecard td:first-child{ text-align:left; padding-left:10px; }
+  table.scorecard th{
+    background:var(--green); color:var(--cream); font-weight:600; font-size:11px;
+    text-transform:uppercase; letter-spacing:.5px; position:sticky; top:0;
+  }
+  table.scorecard td.hole-label{ font-family:'DM Mono',monospace; font-weight:700; color:var(--green-deep); }
+  table.scorecard tr.sub-row td{ background:var(--cream-2); font-weight:700; color:var(--green-deep); }
+  table.scorecard tr:nth-child(even) td{ background:#FBF9F3; }
+  table.scorecard tr.sub-row:nth-child(even) td{ background:var(--cream-2); }
+  table.scorecard input.score-in{
+    width:38px; height:32px; text-align:center; border-radius:7px; border:1px solid var(--line);
+    font-family:'DM Mono',monospace; font-size:14px; font-weight:700; padding:0;
+  }
+  table.scorecard input.score-in:focus{ border-color:var(--gold); }
+
+  .golfer-picker{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+  .chip{
+    padding:8px 14px; border-radius:999px; border:1.5px solid var(--line); background:#fff;
+    font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip.on{ background:var(--green); border-color:var(--green); color:var(--cream); }
+  .chip .letter{
+    width:18px; height:18px; border-radius:50%; background:var(--gold); color:var(--green-deep);
+    font-size:10.5px; font-weight:800; display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; flex-shrink:0;
+  }
+  .chip.on .letter{ background:var(--gold-soft); }
+
+  .stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+  .stat-box{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 8px; text-align:center; }
+  .stat-box .val{ font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:var(--green-deep); }
+  .stat-box .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft); margin-top:2px; }
+
+  table.plain{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.plain th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); padding:6px 4px; border-bottom:1.5px solid var(--line); }
+  table.plain td{ padding:7px 4px; border-bottom:1px solid var(--line); }
+  table.plain tr:last-child td{ border-bottom:none; }
+  .rank-badge{
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:50%; font-size:11px; font-weight:800; font-family:'Fraunces',serif; color:#fff;
+  }
+  .diff-pos{ color:var(--red); font-weight:700; }
+  .diff-neg{ color:var(--fairway); font-weight:700; }
+  .diff-zero{ color:var(--ink-soft); }
+
+  select#statGolferSelect, select.course-pick{ margin-bottom:10px; }
+  .segmented{ display:flex; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:12px;}
+  .segmented button{ flex:1; border:none; background:none; padding:9px 4px; font-size:12.5px; font-weight:600; color:var(--ink-soft); font-family:'DM Sans',sans-serif; cursor:pointer;}
+  .segmented button.active{ background:var(--green); color:var(--cream); }
+
+  .round-entry{ display:flex; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .round-entry:last-child{ border-bottom:none; }
+  .round-entry .date-badge{
+    width:48px; height:48px; border-radius:10px; background:var(--green); color:var(--cream);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .round-entry .date-badge .d{ font-family:'Fraunces',serif; font-weight:700; font-size:16px; line-height:1;}
+  .round-entry .date-badge .m{ font-size:9px; text-transform:uppercase; letter-spacing:.5px; opacity:.85;}
+  .round-entry .meta{ flex:1; min-width:0; }
+  .round-entry .meta .course-name{ font-weight:700; font-size:14px; }
+  .round-entry .meta .players{ font-size:11.5px; color:var(--ink-soft); }
+  .round-entry .score-pill{ font-family:'DM Mono',monospace; font-weight:700; font-size:14px; background:var(--cream-2); padding:5px 10px; border-radius:8px; color:var(--green-deep);}
+
+  .toast{
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--green-deep); color:var(--cream); padding:10px 18px; border-radius:999px;
+    font-size:13px; font-weight:600; box-shadow:var(--shadow); opacity:0; pointer-events:none;
+    transition:.25s ease; z-index:100; border:1px solid var(--gold);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(22,54,42,.55); display:none; align-items:flex-end;
+    justify-content:center; z-index:80;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{
+    background:var(--cream); width:100%; max-width:640px; border-radius:18px 18px 0 0;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom)); max-height:85vh; overflow-y:auto;
+  }
+  .modal h3{ margin:0 0 10px; color:var(--green-deep); }
+  .close-x{ float:right; background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer; }
+
+  .divider-label{ display:flex; align-items:center; gap:8px; margin:16px 0 8px; }
+  .divider-label span{ font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft); font-weight:700;}
+  .divider-label::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  @media (max-width:380px){
+    .stat-grid{ grid-template-columns:repeat(3,1fr); }
+    .stat-box .val{ font-size:18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="35" y1="18" x2="35" y2="86" stroke="#F6F1E4" stroke-width="6" stroke-linecap="round"/>
+      <path d="M35 20 L74 33 L35 46 Z" fill="#C9A227"/>
+      <ellipse cx="35" cy="90" rx="20" ry="5" fill="#0F241C"/>
+    </svg>
+    <div class="brand-text">
+      <h1>Clubhouse</h1>
+      <p>Score Tracker</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ ROUND SCREEN ============ -->
+  <section class="screen active" id="screen-round">
+    <div class="card" id="roundSetupCard">
+      <p class="eyebrow">New Round</p>
+      <h2>Set up your scorecard</h2>
+      <p class="sub">Pick the course, date and up to 4 golfers, then play away.</p>
+
+      <label for="roundDate">Date</label>
+      <input type="date" id="roundDate">
+
+      <label for="roundCourse">Course</label>
+      <select id="roundCourse"></select>
+
+      <label>Golfers <span style="font-weight:400;color:var(--ink-soft);">(select up to 4 — order sets A / B / C / D)</span></label>
+      <div class="golfer-picker" id="roundGolferPicker"></div>
+
+      <div class="row" style="margin-top:14px;">
+        <button class="btn gold block" id="btnBuildScorecard">Build Scorecard</button>
+      </div>
+    </div>
+
+    <div class="card" id="liveScorecardCard" style="display:none;">
+      <div class="row" style="align-items:flex-start;">
+        <div>
+          <p class="eyebrow" id="liveCourseName">Course</p>
+          <h2 id="liveRoundDate" style="margin-bottom:2px;">Round</h2>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn small outline" id="btnEditSetup">Edit</button>
+      </div>
+
+      <div class="sc-wrap" style="margin-top:10px;">
+        <table class="scorecard" id="scTable"></table>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <button class="btn block" id="btnSaveRound">Save Round</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COURSES SCREEN ============ -->
+  <section class="screen" id="screen-courses">
+    <div class="card">
+      <p class="eyebrow">Courses</p>
+      <h2>Your courses</h2>
+      <p class="sub">Add pitch &amp; putt or golf courses, hole by hole.</p>
+      <button class="btn gold block" id="btnNewCourse">+ Add New Course</button>
+    </div>
+    <div class="card" id="courseListCard">
+      <div id="courseList"></div>
+    </div>
+  </section>
+
+  <!-- ============ GOLFERS SCREEN ============ -->
+  <section class="screen" id="screen-golfers">
+    <div class="card">
+      <p class="eyebrow">Golfers</p>
+      <h2>Your golfers</h2>
+      <label for="newGolferName">Add a golfer</label>
+      <div class="row">
+        <input type="text" id="newGolferName" placeholder="e.g. Richie">
+        <button class="btn" id="btnAddGolfer">Add</button>
+      </div>
+    </div>
+    <div class="card" id="golferListCard">
+      <div id="golferList"></div>
+    </div>
+  </section>
+
+  <!-- ============ STATS SCREEN ============ -->
+  <section class="screen" id="screen-stats">
+    <div class="card">
+      <p class="eyebrow">Stats</p>
+      <h2>Golfer performance</h2>
+      <select id="statGolferSelect"></select>
+      <div id="statsBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY SCREEN ============ -->
+  <section class="screen" id="screen-history">
+    <div class="card">
+      <p class="eyebrow">History</p>
+      <h2>Rounds played</h2>
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="tabs">
+  <button data-screen="round" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M6 4l12 3-12 3"/></svg>
+    Round
+  </button>
+  <button data-screen="courses">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>
+    Courses
+  </button>
+  <button data-screen="golfers">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.6"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14 20c0-2.6 1.9-4.7 4.4-5.2"/></svg>
+    Golfers
+  </button>
+  <button data-screen="stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+    Stats
+  </button>
+  <button data-screen="history">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l4 2"/></svg>
+    History
+  </button>
+</nav>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   DATA LAYER — localStorage
+========================================================= */
+const DB_KEYS = { courses:'gsc_courses', golfers:'gsc_golfers', rounds:'gsc_rounds' };
+const load = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e){ return []; } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+let courses = load(DB_KEYS.courses);
+let golfers = load(DB_KEYS.golfers);
+let rounds  = load(DB_KEYS.rounds);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* =========================================================
+   NAV
+========================================================= */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=> showScreen(btn.dataset.screen));
+});
+function showScreen(name){
+  document.querySelectorAll('section.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name));
+  if(name==='courses') renderCourseList();
+  if(name==='golfers') renderGolferList();
+  if(name==='stats') renderStatsScreen();
+  if(name==='history') renderHistory();
+  if(name==='round') renderRoundSetup();
+}
+
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); document.getElementById('modalContent').innerHTML=''; }
+document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeModal(); });
+function openModal(html){ document.getElementById('modalContent').innerHTML = html; document.getElementById('modalBg').classList.add('show'); }
+
+/* =========================================================
+   COURSES
+========================================================= */
+function renderCourseList(){
+  const list = document.getElementById('courseList');
+  if(courses.length===0){
+    list.innerHTML = emptyState('No courses yet', 'Add your first course to start tracking rounds.');
+    return;
+  }
+  list.innerHTML = courses.map(c=>{
+    const totalPar = c.holes.reduce((s,h)=>s+Number(h.par||0),0);
+    return `<div class="item">
+      <div class="avatar">${c.holes.length}</div>
+      <div class="meta">
+        <div class="name">${escapeHtml(c.name)}</div>
+        <div class="sub2">${c.holes.length} holes · Par ${totalPar}</div>
+      </div>
+      <button class="btn danger" onclick="deleteCourse('${c.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+function emptyState(title, sub){
+  return `<div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5"/></svg>
+    <p style="font-weight:700;color:var(--ink);">${title}</p>
+    <p>${sub}</p>
+  </div>`;
+}
+function deleteCourse(id){
+  if(!confirm('Delete this course? Rounds played on it will remain in history but stats may look odd.')) return;
+  courses = courses.filter(c=>c.id!==id);
+  save(DB_KEYS.courses, courses);
+  renderCourseList();
+  renderRoundSetup();
+  toast('Course deleted');
+}
+
+document.getElementById('btnNewCourse').addEventListener('click', openNewCourseModal);
+function openNewCourseModal(){
+  openModal(`
+    <button class="close-x" onclick="closeModal()">&times;</button>
+    <h3>New Course</h3>
+    <label for="mCourseName">Course name</label>
+    <input type="text" id="mCourseName" placeholder="e.g. Kilkenny Pitch &amp; Putt">
+    <label for="mHoleCount">Number of holes</label>
+    <select id="mHoleCount">
+      <option value="9">9</option>
+      <option value="18" selected>18</option>
+    </select>
+    <div class="divider-label"><span>Hole details</span></div>
+    <p class="sub" style="margin:0 0 6px;">Par is required for each hole. Distance (metres) is optional.</p>
+    <div id="mHoleRows"></div>
+    <button class="btn gold block" style="margin-top:14px;" id="mSaveCourseBtn">Save Course</button>
+  `);
+  buildHoleRows(18);
+  document.getElementById('mHoleCount').addEventListener('change', e=> buildHoleRows(Number(e.target.value)));
+  document.getElementById('mSaveCourseBtn').addEventListener('click', saveCourseFromModal);
+}
+function buildHoleRows(n){
+  const wrap = document.getElementById('mHoleRows');
+  let rowsHtml = `<div class="hole-row" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);font-weight:700;">
+    <div>#</div><div>Par</div><div>Distance (m)</div><div></div></div>`;
+  for(let i=1;i<=n;i++){
+    rowsHtml += `<div class="hole-row">
+      <div class="hnum">${i}</div>
+      <select id="hpar_${i}">
+        <option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+      </select>
+      <input type="number" id="hdist_${i}" placeholder="optional" min="0">
+      <div></div>
+    </div>`;
+  }
+  wrap.innerHTML = rowsHtml;
+  // pitch & putt convenience: default to par 3 if 18 holes and name suggests it later — keep par4 default generally,
+  // but most pitch & putt courses are all par 3, so default par to 3 for quick entry:
+  for(let i=1;i<=n;i++){ document.getElementById(`hpar_${i}`).value = "3"; }
+}
+function saveCourseFromModal(){
+  const name = document.getElementById('mCourseName').value.trim();
+  const n = Number(document.getElementById('mHoleCount').value);
+  if(!name){ toast('Enter a course name'); return; }
+  const holes = [];
+  for(let i=1;i<=n;i++){
+    const par = document.getElementById(`hpar_${i}`).value;
+    const distEl = document.getElementById(`hdist_${i}`);
+    const dist = distEl.value ? Number(distEl.value) : null;
+    holes.push({ number:i, par:Number(par), distance:dist });
+  }
+  courses.push({ id:uid(), name, holes });
+  save(DB_KEYS.courses, courses);
+  closeModal();
+  renderCourseList();
+  renderRoundSetup();
+  toast('Course saved');
+}
+
+/* =========================================================
+   GOLFERS
+========================================================= */
+function renderGolferList(){
+  const list = document.getElementById('golferList');
+  if(golfers.length===0){
+    list.innerHTML = emptyState('No golfers yet', 'Add golfers so you can select them when starting a round.');
+    return;
+  }
+  list.innerHTML = golfers.map(g=>{
+    const played = rounds.filter(r=>r.golferIds.includes(g.id)).length;
+    return `<div class="item">
+      <div class="avatar">${initials(g.name)}</div>
+      <div class="meta">
+        <div class="name">${escapeHtml(g.name)}</div>
+        <div class="sub2">${played} round${played===1?'':'s'} played</div>
+      </div>
+      <button class="btn danger" onclick="deleteGolfer('${g.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+function initials(name){ return name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function deleteGolfer(id){
+  if(!confirm('Delete this golfer? Their past rounds stay in history.')) return;
+  golfers = golfers.filter(g=>g.id!==id);
+  save(DB_KEYS.golfers, golfers);
+  renderGolferList();
+  renderRoundSetup();
+  toast('Golfer deleted');
+}
+document.getElementById('btnAddGolfer').addEventListener('click', ()=>{
+  const input = document.getElementById('newGolferName');
+  const name = input.value.trim();
+  if(!name){ toast('Enter a name'); return; }
+  golfers.push({ id:uid(), name });
+  save(DB_KEYS.golfers, golfers);
+  input.value='';
+  renderGolferList();
+  renderRoundSetup();
+  toast('Golfer added');
+});
+document.getElementById('newGolferName').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnAddGolfer').click(); });
+
+/* =========================================================
+   ROUND SETUP + SCORECARD
+========================================================= */
+let selectedGolferIds = []; // ordered -> A,B,C,D
+let activeCourse = null;
+
+function renderRoundSetup(){
+  const dateEl = document.getElementById('roundDate');
+  if(!dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+
+  const courseSel = document.getElementById('roundCourse');
+  if(courses.length===0){
+    courseSel.innerHTML = `<option value="">Add a course first</option>`;
+  } else {
+    courseSel.innerHTML = courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)} (${c.holes.length} holes)</option>`).join('');
+  }
+
+  const picker = document.getElementById('roundGolferPicker');
+  if(golfers.length===0){
+    picker.innerHTML = `<span style="font-size:12.5px;color:var(--ink-soft);">Add golfers first on the Golfers tab.</span>`;
+  } else {
+    picker.innerHTML = golfers.map(g=>{
+      const idx = selectedGolferIds.indexOf(g.id);
+      const on = idx>-1;
+      const letter = on ? 'ABCD'[idx] : '';
+      return `<div class="chip ${on?'on':''}" onclick="toggleGolferSelect('${g.id}')">
+        ${on ? `<span class="letter">${letter}</span>` : ''} ${escapeHtml(g.name)}
+      </div>`;
+    }).join('');
+  }
+}
+function toggleGolferSelect(id){
+  const idx = selectedGolferIds.indexOf(id);
+  if(idx>-1){ selectedGolferIds.splice(idx,1); }
+  else{
+    if(selectedGolferIds.length>=4){ toast('Maximum 4 golfers'); return; }
+    selectedGolferIds.push(id);
+  }
+  renderRoundSetup();
+}
+document.getElementById('roundCourse').addEventListener('change', ()=>{});
+
+document.getElementById('btnBuildScorecard').addEventListener('click', ()=>{
+  const courseId = document.getElementById('roundCourse').value;
+  if(!courseId){ toast('Pick a course'); return; }
+  if(selectedGolferIds.length===0){ toast('Select at least 1 golfer'); return; }
+  activeCourse = courses.find(c=>c.id===courseId);
+  buildLiveScorecard();
+  document.getElementById('roundSetupCard').style.display='none';
+  document.getElementById('liveScorecardCard').style.display='block';
+});
+document.getElementById('btnEditSetup').addEventListener('click', ()=>{
+  document.getElementById('roundSetupCard').style.display='block';
+  document.getElementById('liveScorecardCard').style.display='none';
+});
+
+function buildLiveScorecard(){
+  document.getElementById('liveCourseName').textContent = activeCourse.name;
+  const d = new Date(document.getElementById('roundDate').value + 'T00:00:00');
+  document.getElementById('liveRoundDate').textContent = d.toLocaleDateString('en-IE', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+
+  const letters = 'ABCD'.slice(0, selectedGolferIds.length).split('');
+  const holes = activeCourse.holes;
+  let thead = `<thead><tr><th>Hole</th><th>Par</th>${letters.map(l=>`<th>${l}</th>`).join('')}</tr></thead>`;
+  let tbody = '<tbody>';
+  const front = holes.filter(h=>h.number<=9);
+  const back = holes.filter(h=>h.number>9);
+
+  function holeRow(h){
+    return `<tr>
+      <td class="hole-label">${h.number}${h.distance?` <span style="color:var(--ink-soft);font-weight:400;font-size:10.5px;">${h.distance}m</span>`:''}</td>
+      <td>${h.par}</td>
+      ${letters.map((l,i)=>`<td><input class="score-in" type="number" min="1" max="15" inputmode="numeric" data-hole="${h.number}" data-gidx="${i}"></td>`).join('')}
+    </tr>`;
+  }
+  front.forEach(h=> tbody += holeRow(h));
+  if(front.length){
+    tbody += subtotalRow('OUT', front, letters);
+  }
+  back.forEach(h=> tbody += holeRow(h));
+  if(back.length){
+    tbody += subtotalRow('IN', back, letters);
+  }
+  tbody += totalRow(holes, letters);
+  tbody += '</tbody>';
+
+  document.getElementById('scTable').innerHTML = thead + tbody;
+
+  document.querySelectorAll('.score-in').forEach(inp=>{
+    inp.addEventListener('input', updateTotalsRow);
+  });
+}
+function subtotalRow(label, holeSubset, letters){
+  const par = holeSubset.reduce((s,h)=>s+Number(h.par),0);
+  return `<tr class="sub-row" data-subset="${label}">
+    <td>${label}</td><td>${par}</td>
+    ${letters.map((l,i)=>`<td data-sub="${label}" data-gidx="${i}">–</td>`).join('')}
+  </tr>`;
+}
+function totalRow(holes, letters){
+  const par = holes.reduce((s,h)=>s+Number(h.par),0);
+  return `<tr class="sub-row" data-subset="TOT" style="background:var(--gold-soft);">
+    <td>TOT</td><td>${par}</td>
+    ${letters.map((l,i)=>`<td data-sub="TOT" data-gidx="${i}">–</td>`).join('')}
+  </tr>`;
+}
+function updateTotalsRow(){
+  const holes = activeCourse.holes;
+  const letters = 'ABCD'.slice(0, selectedGolferIds.length).split('');
+  letters.forEach((l,i)=>{
+    let outSum=0, outCount=0, inSum=0, inCount=0;
+    holes.forEach(h=>{
+      const inp = document.querySelector(`.score-in[data-hole="${h.number}"][data-gidx="${i}"]`);
+      const val = inp && inp.value ? Number(inp.value) : null;
+      if(val){
+        if(h.number<=9){ outSum+=val; outCount++; } else { inSum+=val; inCount++; }
+      }
+    });
+    const outCell = document.querySelector(`[data-sub="OUT"][data-gidx="${i}"]`);
+    const inCell = document.querySelector(`[data-sub="IN"][data-gidx="${i}"]`);
+    const totCell = document.querySelector(`[data-sub="TOT"][data-gidx="${i}"]`);
+    if(outCell) outCell.textContent = outCount ? outSum : '–';
+    if(inCell) inCell.textContent = inCount ? inSum : '–';
+    if(totCell){
+      const total = (outCount?outSum:0) + (inCount?inSum:0);
+      totCell.textContent = (outCount||inCount) ? total : '–';
+    }
+  });
+}
+
+document.getElementById('btnSaveRound').addEventListener('click', ()=>{
+  const holes = activeCourse.holes;
+  const scores = {};
+  let anyScore = false;
+  selectedGolferIds.forEach((gid,i)=>{
+    const holeScores = {};
+    holes.forEach(h=>{
+      const inp = document.querySelector(`.score-in[data-hole="${h.number}"][data-gidx="${i}"]`);
+      const val = inp && inp.value ? Number(inp.value) : null;
+      if(val){ holeScores[h.number]=val; anyScore=true; }
+    });
+    scores[gid]=holeScores;
+  });
+  if(!anyScore){ toast('Enter at least one score'); return; }
+  rounds.push({
+    id:uid(),
+    date: document.getElementById('roundDate').value,
+    courseId: activeCourse.id,
+    golferIds: [...selectedGolferIds],
+    scores
+  });
+  save(DB_KEYS.rounds, rounds);
+  toast('Round saved to history');
+  // reset
+  selectedGolferIds = [];
+  activeCourse = null;
+  document.getElementById('roundSetupCard').style.display='block';
+  document.getElementById('liveScorecardCard').style.display='none';
+  renderRoundSetup();
+});
+
+/* =========================================================
+   STATS
+========================================================= */
+function renderStatsScreen(){
+  const sel = document.getElementById('statGolferSelect');
+  if(golfers.length===0){
+    sel.innerHTML = '';
+    document.getElementById('statsBody').innerHTML = emptyState('No golfers yet', 'Add a golfer to see their stats.');
+    return;
+  }
+  const prevVal = sel.value;
+  sel.innerHTML = golfers.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+  if(prevVal && golfers.find(g=>g.id===prevVal)) sel.value = prevVal;
+  sel.onchange = ()=> renderStatsFor(sel.value);
+  renderStatsFor(sel.value);
+}
+function renderStatsFor(golferId){
+  const body = document.getElementById('statsBody');
+  const g = golfers.find(x=>x.id===golferId);
+  if(!g){ body.innerHTML=''; return; }
+  const myRounds = rounds.filter(r=>r.golferIds.includes(golferId));
+  if(myRounds.length===0){
+    body.innerHTML = emptyState('No rounds yet', `${escapeHtml(g.name)} hasn't played a round yet. Head to the Round tab to get started.`);
+    return;
+  }
+
+  // total strokes per round for this golfer
+  function totalFor(r){
+    const hs = r.scores[golferId] || {};
+    return Object.values(hs).reduce((s,v)=>s+v,0);
+  }
+  const roundsWithTotals = myRounds.map(r=>({ r, total: totalFor(r), course: courses.find(c=>c.id===r.courseId) }))
+    .filter(x=>x.total>0);
+
+  // best round per course
+  const byCourse = {};
+  roundsWithTotals.forEach(x=>{
+    const cid = x.r.courseId;
+    if(!byCourse[cid]) byCourse[cid]=[];
+    byCourse[cid].push(x);
+  });
+
+  let html = `<div class="stat-grid">
+    <div class="stat-box"><div class="val">${myRounds.length}</div><div class="lbl">Rounds</div></div>
+    <div class="stat-box"><div class="val">${Object.keys(byCourse).length}</div><div class="lbl">Courses</div></div>
+    <div class="stat-box"><div class="val">${roundsWithTotals.length ? Math.min(...roundsWithTotals.map(x=>x.total)) : '–'}</div><div class="lbl">Best Score</div></div>
+  </div>`;
+
+  html += `<div class="divider-label"><span>Best round per course</span></div>`;
+  html += `<table class="plain"><thead><tr><th>Course</th><th>Best</th><th>Par</th><th>Date</th></tr></thead><tbody>`;
+  Object.keys(byCourse).forEach(cid=>{
+    const course = courses.find(c=>c.id===cid);
+    const par = course ? course.holes.reduce((s,h)=>s+h.par,0) : '–';
+    const best = byCourse[cid].reduce((a,b)=> b.total<a.total ? b : a);
+    const diff = par!=='–' ? best.total-par : null;
+    html += `<tr>
+      <td>${course ? escapeHtml(course.name) : 'Unknown course'}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;">${best.total}${diff!==null ? ` <span class="${diff>0?'diff-pos':diff<0?'diff-neg':'diff-zero'}">(${diff>0?'+':''}${diff})</span>` : ''}</td>
+      <td>${par}</td>
+      <td>${formatDate(best.r.date)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+
+  // hole analysis per course
+  html += `<div class="divider-label"><span>Hole analysis</span></div>`;
+  Object.keys(byCourse).forEach(cid=>{
+    const course = courses.find(c=>c.id===cid);
+    if(!course) return;
+    const roundsOnCourse = myRounds.filter(r=>r.courseId===cid);
+    const holeStats = course.holes.map(h=>{
+      const vals = roundsOnCourse.map(r => (r.scores[golferId]||{})[h.number]).filter(v=>v!=null);
+      const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+      return { num:h.number, par:h.par, avg, diff: avg!=null ? avg-h.par : null, count:vals.length };
+    });
+    const played = holeStats.filter(h=>h.avg!=null);
+    const ranked = [...played].sort((a,b)=> b.diff - a.diff);
+    ranked.forEach((h,i)=> h.rank = i+1);
+    const rankMap = {}; ranked.forEach(h=> rankMap[h.num]=h.rank);
+    const totalRanked = ranked.length;
+
+    html += `<p style="font-weight:700;font-size:13.5px;margin:14px 0 4px;color:var(--green-deep);">${escapeHtml(course.name)}</p>`;
+    html += `<table class="plain"><thead><tr><th>Hole</th><th>Par</th><th>Avg</th><th>+/-</th><th>Rank</th></tr></thead><tbody>`;
+    holeStats.forEach(h=>{
+      const rank = rankMap[h.num];
+      let badgeColor = 'var(--ink-soft)';
+      if(rank){
+        if(rank<= Math.ceil(totalRanked*0.25)) badgeColor='var(--red)';
+        else if(rank > totalRanked - Math.ceil(totalRanked*0.25)) badgeColor='var(--fairway)';
+        else badgeColor='var(--gold)';
+      }
+      html += `<tr>
+        <td style="font-family:'DM Mono',monospace;font-weight:700;">${h.num}</td>
+        <td>${h.par}</td>
+        <td>${h.avg!=null ? h.avg.toFixed(2) : '–'}</td>
+        <td>${h.diff!=null ? `<span class="${h.diff>0?'diff-pos':h.diff<0?'diff-neg':'diff-zero'}">${h.diff>0?'+':''}${h.diff.toFixed(2)}</span>` : '–'}</td>
+        <td>${rank ? `<span class="rank-badge" style="background:${badgeColor};">${rank}</span>` : '–'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    html += `<p style="font-size:11px;color:var(--ink-soft);margin:4px 0 0;">Rank 1 = hardest hole (highest average over par), Rank ${totalRanked || course.holes.length} = easiest.</p>`;
+  });
+
+  body.innerHTML = html;
+}
+
+/* =========================================================
+   HISTORY
+========================================================= */
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  if(rounds.length===0){
+    list.innerHTML = emptyState('No rounds yet', 'Rounds you save will show up here, sorted by date.');
+    return;
+  }
+  const sorted = [...rounds].sort((a,b)=> b.date.localeCompare(a.date));
+  list.innerHTML = sorted.map(r=>{
+    const course = courses.find(c=>c.id===r.courseId);
+    const d = new Date(r.date+'T00:00:00');
+    const names = r.golferIds.map(gid=> golfers.find(g=>g.id===gid)?.name || '?').join(', ');
+    const totals = r.golferIds.map(gid=>{
+      const hs = r.scores[gid]||{};
+      return Object.values(hs).reduce((s,v)=>s+v,0);
+    });
+    const best = totals.length ? Math.min(...totals.filter(t=>t>0)) : 0;
+    return `<div class="round-entry" onclick='openRoundDetail(${JSON.stringify(r.id)})'>
+      <div class="date-badge">
+        <div class="d">${d.getDate()}</div>
+        <div class="m">${d.toLocaleDateString('en-IE',{month:'short'})}</div>
+      </div>
+      <div class="meta">
+        <div class="course-name">${course ? escapeHtml(course.name) : 'Unknown course'}</div>
+        <div class="players">${escapeHtml(names)}</div>
+      </div>
+      <div class="score-pill">${best || '–'}</div>
+    </div>`;
+  }).join('');
+}
+function openRoundDetail(roundId){
+  const r = rounds.find(x=>x.id===roundId);
+  if(!r) return;
+  const course = courses.find(c=>c.id===r.courseId);
+  const letters = 'ABCD'.slice(0, r.golferIds.length).split('');
+  const names = r.golferIds.map(gid=> golfers.find(g=>g.id===gid)?.name || '?');
+  let thead = `<tr><th>Hole</th><th>Par</th>${letters.map(l=>`<th>${l}</th>`).join('')}</tr>`;
+  let body = '';
+  const holes = course ? course.holes : [];
+  const totals = r.golferIds.map(()=>0);
+  holes.forEach(h=>{
+    body += `<tr><td class="hole-label">${h.number}</td><td>${h.par}</td>`;
+    r.golferIds.forEach((gid,i)=>{
+      const v = (r.scores[gid]||{})[h.number];
+      if(v) totals[i]+=v;
+      body += `<td>${v||'–'}</td>`;
+    });
+    body += `</tr>`;
+  });
+  body += `<tr class="sub-row"><td>TOT</td><td>${holes.reduce((s,h)=>s+h.par,0)}</td>${totals.map(t=>`<td>${t||'–'}</td>`).join('')}</tr>`;
+
+  openModal(`
+    <button class="close-x" onclick="closeModal()">&times;</button>
+    <h3>${course ? escapeHtml(course.name) : 'Round'}</h3>
+    <p class="sub" style="margin-top:-6px;">${formatDate(r.date)}</p>
+    <p class="sub" style="margin-top:-10px;">${letters.map((l,i)=>`${l}: ${escapeHtml(names[i])}`).join(' · ')}</p>
+    <div class="sc-wrap"><table class="scorecard">${thead}${body}</table></div>
+    <button class="btn danger block" style="margin-top:14px;" onclick="deleteRound('${r.id}')">Delete This Round</button>
+  `);
+}
+function deleteRound(id){
+  if(!confirm('Delete this round permanently?')) return;
+  rounds = rounds.filter(r=>r.id!==id);
+  save(DB_KEYS.rounds, rounds);
+  closeModal();
+  renderHistory();
+  toast('Round deleted');
+}
+
+/* =========================================================
+   UTIL
+========================================================= */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function formatDate(dstr){
+  const d = new Date(dstr+'T00:00:00');
+  return d.toLocaleDateString('en-IE', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+}
+
+/* =========================================================
+   INIT
+========================================================= */
+renderRoundSetup();
+</script>
+</body>
+</html>
