@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Golf — Score Tracker</title>
+<title>Clubhouse — Score Tracker</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%231B4332%22/><line x1=%2235%22 y1=%2222%22 x2=%2235%22 y2=%2280%22 stroke=%22%23F7F3E8%22 stroke-width=%225%22 stroke-linecap=%22round%22/><path d=%22M35 24 L68 34 L35 44 Z%22 fill=%22%23C9A227%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,6 +54,14 @@
   .brand svg{ width:38px; height:38px; flex-shrink:0; }
   .brand-text h1{ font-size:22px; margin:0; font-weight:600; line-height:1.1;}
   .brand-text p{ margin:2px 0 0; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold-soft); opacity:.9;}
+  .header-icon-btn{
+    position:relative; z-index:1; background:rgba(246,241,228,.12); border:1px solid rgba(246,241,228,.3);
+    color:var(--cream); width:38px; height:38px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .header-icon-btn svg{ width:19px; height:19px; }
+  .backup-summary{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12.5px; margin:10px 0; }
+  .backup-summary b{ color:var(--green-deep); }
 
   /* ---------- Tab nav ---------- */
   nav.tabs{
@@ -260,6 +268,10 @@
       <h1>Clubhouse</h1>
       <p>Score Tracker</p>
     </div>
+    <div class="spacer"></div>
+    <button class="header-icon-btn" id="btnBackup" aria-label="Backup and restore">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    </button>
   </div>
 </header>
 
@@ -901,6 +913,113 @@ function deleteRound(id){
   closeModal();
   renderHistory();
   toast('Round deleted');
+}
+
+/* =========================================================
+   BACKUP & RESTORE
+========================================================= */
+document.getElementById('btnBackup').addEventListener('click', openBackupModal);
+
+function openBackupModal(){
+  openModal(`
+    <button class="close-x" onclick="closeModal()">&times;</button>
+    <h3>Backup &amp; Restore</h3>
+    <p class="sub">Save your data to a file, or move it to a new phone or browser.</p>
+    <div class="backup-summary">
+      <b>${courses.length}</b> course${courses.length===1?'':'s'} · <b>${golfers.length}</b> golfer${golfers.length===1?'':'s'} · <b>${rounds.length}</b> round${rounds.length===1?'':'s'} currently on this device
+    </div>
+    <button class="btn gold block" id="btnExportBackup">⬇ Export Backup File</button>
+
+    <div class="divider-label"><span>Restore from a file</span></div>
+    <p class="sub" style="margin-top:-4px;">Pick a .json backup file you exported previously.</p>
+    <input type="file" id="importFileInput" accept="application/json,.json" style="display:none">
+    <button class="btn outline block" id="btnChooseImport">Choose Backup File</button>
+    <div id="importPreview"></div>
+  `);
+  document.getElementById('btnExportBackup').addEventListener('click', exportBackup);
+  document.getElementById('btnChooseImport').addEventListener('click', ()=> document.getElementById('importFileInput').click());
+  document.getElementById('importFileInput').addEventListener('change', handleImportFileSelect);
+}
+
+function exportBackup(){
+  const payload = {
+    app: 'clubhouse-score-tracker',
+    exportedAt: new Date().toISOString(),
+    courses, golfers, rounds
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `clubhouse-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  toast('Backup downloaded');
+}
+
+let pendingImportData = null;
+function handleImportFileSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data.courses) || !Array.isArray(data.golfers) || !Array.isArray(data.rounds)){
+        throw new Error('bad shape');
+      }
+      pendingImportData = data;
+      showImportPreview(data);
+    }catch(err){
+      toast('That file doesn\'t look like a valid backup');
+    }
+  };
+  reader.readAsText(file);
+}
+function showImportPreview(data){
+  const when = data.exportedAt ? formatDate(data.exportedAt.slice(0,10)) : 'unknown date';
+  document.getElementById('importPreview').innerHTML = `
+    <div class="backup-summary">
+      Backup from <b>${when}</b> contains <b>${data.courses.length}</b> course${data.courses.length===1?'':'s'},
+      <b>${data.golfers.length}</b> golfer${data.golfers.length===1?'':'s'}, <b>${data.rounds.length}</b> round${data.rounds.length===1?'':'s'}.
+    </div>
+    <p class="sub" style="margin-top:-2px;">Merge adds anything new without touching what's already here. Replace wipes this device's data first.</p>
+    <div class="row" style="gap:8px;">
+      <button class="btn" style="flex:1;" onclick="applyImport('merge')">Merge</button>
+      <button class="btn danger" style="flex:1;" onclick="applyImport('replace')">Replace All</button>
+    </div>
+  `;
+}
+function applyImport(mode){
+  if(!pendingImportData) return;
+  if(mode==='replace'){
+    if(!confirm('This will permanently delete all courses, golfers and rounds currently on this device and replace them with the backup. Continue?')) return;
+    courses = pendingImportData.courses;
+    golfers = pendingImportData.golfers;
+    rounds = pendingImportData.rounds;
+  } else {
+    courses = mergeById(courses, pendingImportData.courses);
+    golfers = mergeById(golfers, pendingImportData.golfers);
+    rounds = mergeById(rounds, pendingImportData.rounds);
+  }
+  save(DB_KEYS.courses, courses);
+  save(DB_KEYS.golfers, golfers);
+  save(DB_KEYS.rounds, rounds);
+  pendingImportData = null;
+  closeModal();
+  toast('Backup restored');
+  // refresh whichever screen is active
+  const activeBtn = document.querySelector('nav.tabs button.active');
+  if(activeBtn) showScreen(activeBtn.dataset.screen);
+}
+function mergeById(current, incoming){
+  const map = {};
+  current.forEach(item => map[item.id] = item);
+  incoming.forEach(item => map[item.id] = item); // incoming wins on id collision
+  return Object.values(map);
 }
 
 /* =========================================================
