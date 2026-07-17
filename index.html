@@ -156,12 +156,14 @@
 
   /* Scorecard table */
   .sc-wrap{ overflow-x:auto; border-radius:12px; border:1px solid var(--line); }
-  table.scorecard{ border-collapse:collapse; width:100%; min-width:420px; background:#fff; }
+  table.scorecard{ border-collapse:collapse; width:100%; table-layout:fixed; background:#fff; }
   table.scorecard th, table.scorecard td{
     border-bottom:1px solid var(--line); border-right:1px solid var(--line);
-    padding:7px 4px; text-align:center; font-size:12.5px;
+    padding:7px 2px; text-align:center; font-size:12.5px;
+    overflow:hidden; white-space:nowrap;
   }
-  table.scorecard th:first-child, table.scorecard td:first-child{ text-align:left; padding-left:10px; }
+  table.scorecard th:first-child, table.scorecard td:first-child{ text-align:left; padding-left:6px; }
+  table.scorecard td.hole-label{ font-size:12px; }
   table.scorecard th{
     background:var(--green); color:var(--cream); font-weight:600; font-size:11px;
     text-transform:uppercase; letter-spacing:.5px; position:sticky; top:0;
@@ -171,7 +173,7 @@
   table.scorecard tr:nth-child(even) td{ background:#FBF9F3; }
   table.scorecard tr.sub-row:nth-child(even) td{ background:var(--cream-2); }
   table.scorecard input.score-in{
-    width:38px; height:32px; text-align:center; border-radius:7px; border:1px solid var(--line);
+    width:32px; height:30px; text-align:center; border-radius:7px; border:1px solid var(--line);
     font-family:'DM Mono',monospace; font-size:14px; font-weight:700; padding:0;
   }
   table.scorecard input.score-in:focus{ border-color:var(--gold); }
@@ -633,6 +635,12 @@ document.getElementById('btnEditSetup').addEventListener('click', ()=>{
   document.getElementById('liveScorecardCard').style.display='none';
 });
 
+function scorecardColgroup(letters){
+  let cols = `<col style="width:52px"><col style="width:32px">`;
+  letters.forEach(()=> cols += `<col style="width:34px">`);
+  return `<colgroup>${cols}</colgroup>`;
+}
+
 function buildLiveScorecard(){
   document.getElementById('liveCourseName').textContent = activeCourse.name;
   const d = new Date(document.getElementById('roundDate').value + 'T00:00:00');
@@ -663,11 +671,37 @@ function buildLiveScorecard(){
   tbody += totalRow(holes, letters);
   tbody += '</tbody>';
 
-  document.getElementById('scTable').innerHTML = thead + tbody;
+  document.getElementById('scTable').innerHTML = scorecardColgroup(letters) + thead + tbody;
 
-  document.querySelectorAll('.score-in').forEach(inp=>{
-    inp.addEventListener('input', updateTotalsRow);
+  const inputs = Array.from(document.querySelectorAll('.score-in'));
+  inputs.forEach(inp=>{ inp.addEventListener('input', updateTotalsRow); });
+  attachAutoAdvance(inputs);
+}
+
+function attachAutoAdvance(inputs){
+  inputs.forEach((inp, idx)=>{
+    inp.addEventListener('input', ()=>{
+      clearTimeout(inp._advanceTimer);
+      const val = inp.value.replace(/[^0-9]/g,'');
+      if(val.length >= 2){
+        advanceScoreInput(inputs, idx);
+      } else if(val.length === 1){
+        inp._advanceTimer = setTimeout(()=> advanceScoreInput(inputs, idx), 550);
+      }
+    });
+    inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        clearTimeout(inp._advanceTimer);
+        advanceScoreInput(inputs, idx);
+      }
+    });
   });
+}
+function advanceScoreInput(inputs, idx){
+  const next = inputs[idx+1];
+  if(next){ next.focus(); next.select(); }
+  else { inputs[idx].blur(); }
 }
 function subtotalRow(label, holeSubset, letters){
   const par = holeSubset.reduce((s,h)=>s+Number(h.par),0);
@@ -902,7 +936,7 @@ function openRoundDetail(roundId){
     <h3>${course ? escapeHtml(course.name) : 'Round'}</h3>
     <p class="sub" style="margin-top:-6px;">${formatDate(r.date)}</p>
     <p class="sub" style="margin-top:-10px;">${letters.map((l,i)=>`${l}: ${escapeHtml(names[i])}`).join(' · ')}</p>
-    <div class="sc-wrap"><table class="scorecard">${thead}${body}</table></div>
+    <div class="sc-wrap"><table class="scorecard">${scorecardColgroup(letters)}${thead}${body}</table></div>
     <button class="btn danger block" style="margin-top:14px;" onclick="deleteRound('${r.id}')">Delete This Round</button>
   `);
 }
